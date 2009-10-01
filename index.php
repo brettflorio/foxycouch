@@ -99,9 +99,6 @@ if (isset($_POST['FoxyData'])) { // Receiving transmission from FoxyCart...
     $FoxyData = rc4crypt::decrypt($preferences->shared_secret, urldecode($_POST["FoxyData"]));
     $document = new SimpleXMLElement($FoxyData);
 
-    // if ($document->datafeed_version != "XML FoxyCart Version 0.8")
-    //     error_notify("Wrong FoxyCart XML Version -- please set version 0.8 in your store configuration.");
-
     $order_index = 0;
 
     foreach ($document->transactions->transaction as $transaction) {
@@ -166,8 +163,7 @@ else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'process') {
                 $order_processed = (isset($order->processed->$processor_name) && !$order->processed->$processor_name->error);
 
                 if (!$order_processed) {
-		    $XMLOutput_encrypted = urlencode(rc4crypt::encrypt($preferences->shared_secret, $order->raw_xml->data));
-//die(serialize($preferences->secret_key));
+                    $XMLOutput_encrypted = urlencode(rc4crypt::encrypt($preferences->shared_secret, $order->raw_xml->data));
 
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, $processor->endpoint);
