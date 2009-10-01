@@ -11,18 +11,7 @@
 */
 
 require "couchdb.class.inc.php";
-
-$couchdb = new CouchDB('foxy-orders');
-try {
-    $response = $couchdb->getDoc('preferences');
-} catch(CouchDBException $e) {
-    die($e->getMessage()."\n");
-}
-$preferences = $response->getBodyAsObject();
-
-if (!$preferences || !$preferences->shared_secret) {
-    die("Foxycouch hasn't been set up properly -- please make sure there is a 'preferences' document with a 'shared_secret' field in the foxy-orders database");
-}
+require "config.inc.php";
 
 // ======================================================================================
 // CHANGE THIS DATA:
@@ -30,7 +19,7 @@ if (!$preferences || !$preferences->shared_secret) {
 // Set the key you entered in your FoxyCart.com admin.
 // Modify the XML below as necessary.  DO NOT modify the structure, just the data
 // ======================================================================================
-$myURL = 'http://localhost/~fred/foxycouch/index.php';
+$myURL = $preferences->install_url;
 $myKey = $preferences->shared_secret;
 
 // This is FoxyCart Version 0.6 XML.  See http://wiki.foxycart.com/docs:datafeed?s[]=xml

@@ -1,13 +1,6 @@
 <?php
 require "couchdb.class.inc.php";
-$couchdb = new CouchDB('foxy-orders');
-try {
-    $response = $couchdb->getDoc('preferences');
-} catch(CouchDBException $e) {
-    die($e->getMessage()."\n");
-}
-
-$preferences = $response->getBodyAsObject();
+require "config.inc.php";
 
 if (isset($_REQUEST['order'])) {
     $order_id = $_REQUEST['order'];

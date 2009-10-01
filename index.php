@@ -2,16 +2,7 @@
 
 require "couchdb.class.inc.php";
 require "class.rc4crypt.php";
-
-$couchdb = new CouchDB('foxy-orders');
-try {
-    $response = $couchdb->getDoc('preferences');
-} catch(CouchDBException $e) {
-    die($e->getMessage()."\n");
-}
-
-$preferences = $response->getBodyAsObject();
-
+require "config.inc.php";
 
 function error_notify($msg) {
     die($msg);
@@ -108,8 +99,8 @@ if (isset($_POST['FoxyData'])) { // Receiving transmission from FoxyCart...
     $FoxyData = rc4crypt::decrypt($preferences->shared_secret, urldecode($_POST["FoxyData"]));
     $document = new SimpleXMLElement($FoxyData);
 
-    if ($document->datafeed_version != "XML FoxyCart Version 0.8")
-        error_notify("Wrong FoxyCart XML Version -- please set version 0.8 in your store configuration.");
+    // if ($document->datafeed_version != "XML FoxyCart Version 0.8")
+    //     error_notify("Wrong FoxyCart XML Version -- please set version 0.8 in your store configuration.");
 
     $order_index = 0;
 
@@ -172,9 +163,12 @@ else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'process') {
 
             foreach ($preferences->processors as $processor) {
                 $processor_name = $processor->name;
-                $order_processed = isset($order->processed->$processor_name);
+                $order_processed = (isset($order->processed->$processor_name) && !$order->processed->$processor_name->error);
 
-                if (!$order_processed || ($order_processed && $order->processed->$processor_name->error)) {
+                if (!$order_processed) {
+		    $XMLOutput_encrypted = urlencode(rc4crypt::encrypt($preferences->shared_secret, $order->raw_xml->data));
+//die(serialize($preferences->secret_key));
+
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, $processor->endpoint);
                     curl_setopt($ch, CURLOPT_POSTFIELDS, array("FoxyData" => $XMLOutput_encrypted));
@@ -183,9 +177,9 @@ else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'process') {
                     $response = curl_getinfo($ch);
                     curl_close($ch);
 
-                    if ($response["http_code"] != 200) {
+                    if ($response["http_code"] != 200 || $response_body != 'foxy') {
                         $order->errors[] = array("response_code" => $response['http_code'],
-                         "message" => "Expected 200 response, got {$response['http_code']}",
+                         "message" => "Expected 200 response and 'foxy' reply, got {$response['http_code']}",
                          "response_body" => $response_body,
                          "processor" => $processor_name);
                     }
